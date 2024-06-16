@@ -1,0 +1,59 @@
+<html>
+
+<head>
+  <script src="https://thunkable.github.io/webviewer-extension/thunkableWebviewerExtension.js"
+    type="text/javascript"></script>
+</head>
+
+<body>
+  <script type="importmap">
+            {
+              "imports": {
+                "@google/generative-ai": "https://esm.run/@google/generative-ai"
+              }
+            }
+  </script>
+  <script type="module">
+    import { GoogleGenerativeAI } from "@google/generative-ai";
+    const API_KEY = "AIzaSyB_enJuHRK9vanW8g7SFwrdYaxJWrIy3Y0";
+    const genAI = new GoogleGenerativeAI(API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    const req =
+      `
+      - ان يكون الموضوع متعلق  بالفكرة المطروحة (5 نقاط)
+      - ان يكون  ليس به اي خطأ املائي او نحوي (3 نقاط)
+      - ان يكون اسلوب السرد منسق(2 نقاط) 
+      - يحتوى الموضوع على استشهادات بأبيات شعر او قران كريم او احاديث شريفه(4 نقاط)
+      - ان لا يقل عن 10 سطور و لا يزين عن 15 سطر(1 نقاط)
+      `;
+
+    ThunkableWebviewerExtension.receiveMessage(async function (message) {
+      console.log(message);
+      let messageObject = JSON.parse(message);
+      const ans = messageObject.ans;
+      const qus = messageObject.qus;
+
+      const prompt =
+        `
+      قام الطالب بكتابة هذه الاجابة ${ans}
+      لموضوع التعبير هذا ${qus}،
+      ستقوم بارجاع شيئين منفصلان عن بعضهما بهذا الحرف "|" مرة واحده،
+      الشيء الاول هو نبذه عن التقيم العام للاجابة(لاتزيد عن سطرين) باستخدام هذه المعاير:${req}،
+      الشيء الثاني هو الدرجة التي حصل عليها الطالب في صيغة الدرجة / 15.
+
+      Note: don't add * or #
+      `;
+      console.log(prompt);
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      console.log(text);
+
+      ThunkableWebviewerExtension.postMessage(text);
+    });
+  </script>
+</body>
+
+</html>
